@@ -58,6 +58,8 @@ https://github.com/git-disl/DataPoisoning_FL
 运行命令export LD_LIBRARY_PATH=$CONDA_PREFIX/lib:$LD_LIBRARY_PATH
 再运行python generate_data_distribution.py
 
+sbatch mp.sh #启动脚本
+squeue -u $USER #查看当前的任务
 创建脚本fedva.sh，并且复制下面的代码到fedva.sh文件中，再通过sbatch fedva.sh来开始实验：
 #!/bin/bash
 
