@@ -1,6 +1,6 @@
 https://github.com/git-disl/DataPoisoning_FL
 
-1. git clone https://github.com/ZsyRock/research-reproduction.git下载仓库后，cd ~/FedVA/，然后运行conda env create -f environment.yml即可创建环境
+1. git clone https://github.com/ZsyRock/FedVA.git下载仓库后，cd ~/FedVA/，然后运行conda env create -f environment.yml即可创建环境
 
   - python=3.9
   - numpy=1.21
