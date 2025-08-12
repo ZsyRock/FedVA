@@ -23,7 +23,7 @@ def find_next_exp_idx(base=3000):
 # 设置实验运行逻辑（启用标签翻转攻击 + Non-IID 分布）
 def run_model_poison_exp(replacement_method, num_poisoned_workers, kwargs, strategy, experiment_id):
     def config_modifier(args):
-        args.batch_size = 8
+        args.batch_size = 32
         args.test_batch_size = 500
         args.lr = 0.01
         args.cuda = True
@@ -59,7 +59,7 @@ if __name__ == '__main__':
     START_EXP_IDX = find_next_exp_idx()
     NUM_EXP = 1
     NUM_POISONED_WORKERS = 30
-    # 这里不要再重复定义 REPLACEMENT_METHOD
+    # 这里不再重复定义 REPLACEMENT_METHOD
     KWARGS = {
         "NUM_WORKERS_PER_ROUND": 100
     }

@@ -9,57 +9,57 @@ https://github.com/git-disl/DataPoisoning_FL
   - pillow
   - scipy
   - pip:
-      - charset-normalizer==3.4.1
-      - cycler==0.11.0
-      - fonttools==4.38.0
-      - idna==3.10
-      - joblib==1.3.2
-      - kiwisolver==1.4.5
-      - loguru==0.3.2
-      - packaging==24.0
-      - pyparsing==3.1.4
-      - python-dateutil==2.9.0.post0
-      - requests==2.31.0
-      - six==1.17.0
-      - torch==1.13.1
-      - torchvision==0.14.1
-      - typing-extensions==4.7.1
-      - urllib3==2.0.7
+  - charset-normalizer==3.4.1
+  - cycler==0.11.0
+  - fonttools==4.38.0
+  - idna==3.10
+  - joblib==1.3.2
+  - kiwisolver==1.4.5
+  - loguru==0.3.2
+  - packaging==24.0
+  - pyparsing==3.1.4
+  - python-dateutil==2.9.0.post0
+  - requests==2.31.0
+  - six==1.17.0
+  - torch==1.13.1
+  - torchvision==0.14.1
+  - typing-extensions==4.7.1
+  - urllib3==2.0.7
 
 2. 使用conda activate fedva激活环境fedva后:
-    - 运行python generate_data_distribution.py,
-    - 运行python generate_default_models.py,
+  - 运行python generate_data_distribution.py,
+  - 运行python generate_default_models.py,
     
     得到：
 
-    ├── data_loaders
-    │   ├── cifar10
-    │   │   ├── test_data_loader.pickle
-    │   │   └── train_data_loader.pickle
-    │   └── fashion-mnist
-    │       ├── test_data_loader.pickle
-    │       └── train_data_loader.pickle
-    ├── default_models
-    │   ├── Cifar10CNN.model
-    │   └── FashionMNISTCNN.model
+  ├── data_loaders
+  │   ├── cifar10
+  │   │   ├── test_data_loader.pickle
+  │   │   └── train_data_loader.pickle
+  │   └── fashion-mnist
+  │       ├── test_data_loader.pickle
+  │       └── train_data_loader.pickle
+  ├── default_models
+  │   ├── Cifar10CNN.model
+  │   └── FashionMNISTCNN.model
 
-    - 这两个文件是默认的训练数据和模型参数，后续的训练和测试都需要用到。
+  - 这两个文件是默认的训练数据和模型参数，后续的训练和测试都需要用到。
 
 3. 在lf.py文件中修改投毒数量，然后运行python lf.py可以在根目录下生成
-    - /figures/
-    - /logs/
-    - /tabular/
+  - /figures/
+  - /logs/
 
 
-通过HPC做实验：
+如果通过HPC做实验：
 
-遇到ImportError: /lib64/libstdc++.so.6: version `GLIBCXX_3.4.29' not found
-运行命令find $CONDA_PREFIX -name "libstdc++.so.6"
-运行命令export LD_LIBRARY_PATH=$CONDA_PREFIX/lib:$LD_LIBRARY_PATH
-再运行python generate_data_distribution.py
+如果在环境配置阶段遇到ImportError: /lib64/libstdc++.so.6: version `GLIBCXX_3.4.29' not found
+需运行命令find $CONDA_PREFIX -name "libstdc++.so.6"
+再运行命令export LD_LIBRARY_PATH=$CONDA_PREFIX/lib:$LD_LIBRARY_PATH
+最后运行python generate_data_distribution.py这些代码文件
 
 sbatch mp.sh #启动脚本
 squeue -u $USER #查看当前的任务
+
 创建脚本fedva.sh，并且复制下面的代码到fedva.sh文件中，再通过sbatch fedva.sh来开始实验：
 #!/bin/bash
 
