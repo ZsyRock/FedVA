@@ -23,9 +23,9 @@ def find_next_exp_idx(base=3000):
 # 设置实验运行逻辑（启用标签翻转攻击 + Non-IID 分布）
 def run_model_poison_exp(replacement_method, num_poisoned_workers, kwargs, strategy, experiment_id):
     def config_modifier(args):
-        args.batch_size = 32
-        args.test_batch_size = 500
-        args.lr = 0.01
+        args.batch_size = 128 #8.12版本70%准确率时为20
+        args.test_batch_size = 1000
+        args.lr = 0.01 #8.12版本70%准确率时为0.01
         args.cuda = True
         # === 切换到 ResNet18（关键两行） ===
         args.net = ResNet18 #可以改为Cifar10CNN，启用CNN
@@ -36,12 +36,12 @@ def run_model_poison_exp(replacement_method, num_poisoned_workers, kwargs, strat
         args.mal_strat = "concat"
         args.defence = "PCA"
         args.num_workers = 100
-        args.data_distribution_strategy = "noniid"
-        args.noniid_alpha = 1.0
+        args.data_distribution_strategy = "noniid" #args.noniid_alpha = 0.5, edit this in generate_data_distribution_noniid.py
         # 标签翻转统计：0→9
         args.num_classes = 10
         args.source_class = 0
         args.target_class = 9
+        args.local_epochs = 5
 
         return args
 
@@ -58,10 +58,10 @@ def run_model_poison_exp(replacement_method, num_poisoned_workers, kwargs, strat
 if __name__ == '__main__':
     START_EXP_IDX = find_next_exp_idx()
     NUM_EXP = 1
-    NUM_POISONED_WORKERS = 30
-    # 这里不再重复定义 REPLACEMENT_METHOD
+    NUM_POISONED_WORKERS = 40
+    # 这里不要再重复定义 REPLACEMENT_METHOD
     KWARGS = {
-        "NUM_WORKERS_PER_ROUND": 100
+        "NUM_WORKERS_PER_ROUND": 80
     }
     for experiment_id in range(START_EXP_IDX, START_EXP_IDX + NUM_EXP):
         run_model_poison_exp(REPLACEMENT_METHOD, NUM_POISONED_WORKERS, KWARGS, RandomSelectionStrategy(), experiment_id)

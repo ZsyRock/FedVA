@@ -173,7 +173,7 @@ def run_machine_learning(clients, args, poisoned_workers):
     os.makedirs(save_dir, exist_ok=True)
     csv_path = os.path.join(save_dir, "metrics_per_epoch.csv")
     fieldnames = [
-        "epoch", "global_acc", "target_recall", "asr",
+        "epoch", "global_acc", "target_recall", "src", "asr",
         "fp", "fn", "fp_rate", "fn_rate",
         "benign_killed", "comm_cost_bytes", "epoch_time_sec"
     ]
@@ -203,6 +203,7 @@ def run_machine_learning(clients, args, poisoned_workers):
         "[Final Summary] "
         f"Last Acc={final.get('global_acc', float('nan')):.2f}%, "
         f"Last TargetRecall={final.get('target_recall', float('nan')):.4f}, "
+        f"Last SRC={final.get('src', float('nan')):.4f}, "
         f"Last ASR={final.get('asr', float('nan')):.4f}, "
         f"Last BenignKilled={final.get('benign_killed', 0)}"
     )
@@ -211,6 +212,7 @@ def run_machine_learning(clients, args, poisoned_workers):
         f"BestEpoch={best.get('epoch', -1)} | "
         f"Acc={best.get('global_acc', float('nan')):.2f}% | "
         f"TargetRecall={best.get('target_recall', float('nan')):.4f} | "
+        f"SRC={best.get('src', float('nan')):.4f} | "
         f"ASR={best.get('asr', float('nan')):.4f} | "
         f"BenignKilled={best.get('benign_killed', 0)}"
     )
@@ -297,7 +299,7 @@ def train_subset_of_clients(epoch, args, clients, mal_count, poisoned_workers):
         parameters = [clients[i].get_nn_parameters() for i in random_workers]
         discard_list = []  # NEW: 保证存在
         
-    # 得到 parameters 之后,清理旧 epoch 的模型快照，只保留“本轮”的文件；如果想保留最近 K 轮，把 keep_last_k 改成 K
+    # 得到 parameters 之后,清理旧 epoch 的模型快照，只保留最新的文件；如果想保留最近 K 轮，把 keep_last_k 改成 K即可
     try:
         _cleanup_old_models(args.get_save_model_folder_path(), keep_epoch=epoch, keep_last_k=1)
     except Exception as e:
@@ -333,6 +335,8 @@ def train_subset_of_clients(epoch, args, clients, mal_count, poisoned_workers):
     row_sum = cm_sum.sum(axis=1).clip(min=1)
     per_class_recall = np.diag(cm_sum) / row_sum
     target_recall = float(per_class_recall[TARGET_CLASS]) if 0 <= TARGET_CLASS < NUM_CLASSES else float('nan')
+    source_recall = float(per_class_recall[SOURCE_CLASS]) if 0 <= SOURCE_CLASS < NUM_CLASSES else float('nan')
+
 
     # ASR 定义（label-flip 场景）：源类被错到目标类的比例
     if isinstance(SOURCE_CLASS, int) and 0 <= SOURCE_CLASS < NUM_CLASSES and \
@@ -368,6 +372,7 @@ def train_subset_of_clients(epoch, args, clients, mal_count, poisoned_workers):
         "epoch": epoch,
         "global_acc": global_acc,
         "target_recall": target_recall,
+        "src": source_recall,
         "asr": asr,
         "fp": fp,
         "fn": fn,

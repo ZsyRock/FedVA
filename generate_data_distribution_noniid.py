@@ -19,7 +19,7 @@ def save_data_loader_to_file(data_loader, file_path):
 if __name__ == '__main__':
     args = Arguments(logger)
     args.data_distribution_strategy = "noniid"
-    args.noniid_alpha = 1.0  # modify alpha as needed (0.5 to 1.0)
+    args.noniid_alpha = 0.5  # modify alpha as needed (0.5 to 1.0)
 
     dataset = CIFAR10Dataset(args)
 
