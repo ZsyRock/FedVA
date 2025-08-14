@@ -84,6 +84,10 @@ class Client:
     def update_nn_parameters(self, new_params): self.net.load_state_dict(copy.deepcopy(new_params), strict=True)
 
     # ===== Training Core =====
+    def get_local_epochs(self):
+        # 没有在 args 里定义时，默认 1（与当前行为一致）
+        return int(getattr(self.args, "local_epochs", 1))
+
     def train(self, epoch, dl_type, batch_idx=None):
         self.net.train()
         data_loader = self.mal_data_loader if "mal" in dl_type else self.train_data_loader
@@ -105,31 +109,39 @@ class Client:
         assert not self.mal
         if self.args.should_save_model(epoch):
             self.save_model(epoch, self.args.get_epoch_save_start_suffix())
-        self.train(epoch, "benign")
+
+        for _ in range(self.get_local_epochs()):
+            self.train(epoch, "benign")
+
+        # 学习率调度：维持“每轮一次”更稳（不放到循环里）
         self.scheduler.step()
+
         if self.args.should_save_model(epoch):
             self.save_model(epoch, self.args.get_epoch_save_end_suffix())
-        # 对齐 test() 新的返回格式：接收 5 个返回值,增加 _cm 只是占位，不在这两个函数里用
+
         acc, _, prec, by_class, _cm = self.test(self.test_data_loader, log_result=True, epoch=epoch)
         self.test_acc = acc
-        # 维持原有行为：by_class 继续表示“每类指标”（此前你用于 class_diff）
         self.every_class_acc = np.nan_to_num(by_class)
         self.class_diff = max(by_class) - min(by_class)
-
 
     def blend_train(self, epoch):
         assert self.mal
         if self.args.should_save_model(epoch):
             self.save_model(epoch, self.args.get_epoch_save_start_suffix())
-        self.train(epoch, "benign")
+
+        for _ in range(self.get_local_epochs()):
+            self.train(epoch, "benign")
+
         self.scheduler.step()
+
         if self.args.should_save_model(epoch):
             self.save_model(epoch, self.args.get_epoch_save_end_suffix())
-        # 对齐 test() 新的返回格式：接收 5 个返回值
+
         acc, _, prec, by_class, _cm = self.test(self.test_data_loader, log_result=True, epoch=epoch)
         self.test_acc = acc
         self.every_class_acc = np.nan_to_num(by_class)
         self.class_diff = max(by_class) - min(by_class)
+
 
 
 
@@ -144,25 +156,30 @@ class Client:
 
     def concat_train(self, epoch):
         assert "concat" in self.args.mal_strat and self.mal
+
         def sub(a, b): return OrderedDict({k: b[k] - a[k] for k in a})
         def add(a, b): return OrderedDict({k: a[k] + b[k] for k in a})
         def scale(d, s): return OrderedDict({k: v * s for k, v in d.items()})
-        steps = len(self.train_data_loader) if self.train_data_loader else 1
-        for i in range(steps):
-            base = self.get_nn_parameters()
-            self.train(epoch, "benign", i)
-            benign_delta = sub(base, self.get_nn_parameters())
-            self.update_nn_parameters(base)
-            if self.test(self.mal_data_loader)[1] > 0.0:
-                self.train(epoch, "mal")
-                mal_delta = sub(base, self.get_nn_parameters())
-                boosted = add(benign_delta, scale(mal_delta, self.args.mal_boost))
-                self.update_nn_parameters(add(base, boosted))
-            else:
-                self.update_nn_parameters(add(base, benign_delta))
+
+        for _ in range(self.get_local_epochs()):
+            steps = len(self.train_data_loader) if self.train_data_loader else 1
+            for i in range(steps):
+                base = self.get_nn_parameters()
+                self.train(epoch, "benign", i)
+                benign_delta = sub(base, self.get_nn_parameters())
+                self.update_nn_parameters(base)
+                if self.test(self.mal_data_loader)[1] > 0.0:
+                    self.train(epoch, "mal")
+                    mal_delta = sub(base, self.get_nn_parameters())
+                    boosted = add(benign_delta, scale(mal_delta, self.args.mal_boost))
+                    self.update_nn_parameters(add(base, boosted))
+                else:
+                    self.update_nn_parameters(add(base, benign_delta))
+
         self.scheduler.step()
         if self.args.should_save_model(epoch):
             self.save_model(epoch, self.args.get_epoch_save_end_suffix())
+
 
     # ===== Poison Data =====
     def poison_data(self, replacement_method):

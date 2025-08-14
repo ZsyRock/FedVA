@@ -21,4 +21,17 @@ cd /iridisfs/home/sz1c24/FedVA
 export LD_LIBRARY_PATH=$CONDA_PREFIX/lib:$LD_LIBRARY_PATH
 
 # 启动训练
-python lf.py
+# ====== 依次运行多个实验 ======
+echo "==== 开始运行 lf10.py ===="
+python lf10.py
+
+echo "==== 开始运行 lf20.py ===="
+python lf20.py
+
+echo "==== 开始运行 lf30.py ===="
+python lf30.py
+
+echo "==== 开始运行 lf40.py ===="
+python lf40.py
+
+echo "==== 所有实验运行完成 ===="
