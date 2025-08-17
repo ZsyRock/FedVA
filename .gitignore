@@ -1,0 +1,73 @@
+# ===== Python 缓存 =====
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+*.pyo
+*.pyd
+
+# ===== OS 杂项 =====
+.DS_Store
+
+# ===== 环境/虚拟环境目录（按需留一项）=====
+.venv/
+venv/
+env/
+.conda/
+
+# ===== 训练生成物：模型、日志、图像、结果 =====
+# 模型/检查点
+*.pt
+*.pth
+*.onnx
+*.model
+
+# 你明确提到：数字开头的 *_models 目录（如 3000_models/、4000_models/）
+[0-9]*_models/
+# 如果还有其他名字的模型目录，也一并忽略（保留你需要的再用 ! 反选）
+*_models/
+
+# 结果与图像
+figures/
+results/
+logs/
+*.log
+*.png
+*.jpg
+*.jpeg
+*.svg
+*.csv
+*.json
+
+# 训练过程生成的 CSV/JSON（避免把 metrics_per_epoch.csv 提交上去）
+**/metrics_per_epoch.csv
+**/metrics_per_epoch.json
+
+# 数据与缓存（按需放开）
+data/
+data_loaders/
+default_models/
+# 如果 default_models 想保留模板，可改为：
+# default_models/
+# !default_models/README.md
+# !default_models/*.py
+
+# SLURM/HPC 输出
+slurm-*.out
+slurm-*.err
+*.out
+*.err
+# 你脚本里的自定义输出名也会被 *.log 覆盖
+fedva_output.log
+
+# 备份/临时文件
+*backup*.py
+*.tmp
+*.bak
+*.swp
+*.swo
+
+# pickle / numpy 缓存（如需）
+*.pickle
+*.pkl
+*.npy
+*.npz
