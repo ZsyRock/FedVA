@@ -141,7 +141,7 @@ def run_exp(replacement_method, num_poisoned_workers, KWARGS, client_selection_s
 
     results, worker_selection = run_machine_learning(
         clients, args, poisoned_workers)
-    save_results(results, results_files[0])
+    #save_results(results, results_files[0])
     save_results(worker_selection, worker_selections_files[0])
 
     logger.remove(handler)
