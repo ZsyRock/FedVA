@@ -33,7 +33,7 @@ def run_model_poison_exp(replacement_method, num_poisoned_workers, kwargs, strat
 
         # ===== 关键：启用“模型投毒（sign-flip）”，关闭数据投毒 =====
         args.model_poison = "sign"          # 触发 client.sign_attack(...)
-        args.sign_scale = 1.0               # 强度可做 0.5/1/2 消融
+        args.sign_scale = 0.5               # 强度可做 0.5/1/2 消融
         args.data_poison = False            # 只做模型投毒，避免与标签翻转混合
 
         # ===== 其它保持不变 =====

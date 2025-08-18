@@ -5,6 +5,7 @@ import torch
 import numpy as np
 from loguru import logger
 from sklearn.feature_selection import mutual_info_regression
+from scipy.spatial.distance import jensenshannon
 import time
 import sys
 import pickle
@@ -441,37 +442,68 @@ def mutual_info_clustering_selection(args, epoch):
     MODELS_PATH = args.get_save_model_folder_path()
     model_files = sorted(os.listdir(MODELS_PATH))
 
-    start_file = get_model_files_for_suffix(get_model_files_for_epoch(model_files, epoch), args.get_epoch_save_start_suffix())[0]
-    start_model = load_models(args, [os.path.join(MODELS_PATH, start_file)])[0]
-    start_vec = flatten_layers(start_model.get_nn_parameters())
+    # 收集本轮的“end 模型”文件
+    end_files = get_model_files_for_suffix(
+        get_model_files_for_epoch(model_files, epoch),
+        args.get_epoch_save_end_suffix()
+    )
+    if not end_files:
+        logger.warning(f"[MI@E{epoch}] no end files; skip.")
+        return [], [], [], []
 
-    end_files = get_model_files_for_suffix(get_model_files_for_epoch(model_files, epoch), args.get_epoch_save_end_suffix())
-    mi_scores, worker_ids = [], []
-
+    # 1) 读取并扁平化向量
+    vecs, worker_ids = [], []
     for f in end_files:
         worker_id = get_worker_num_from_model_file_name(f)
         end_model = load_models(args, [os.path.join(MODELS_PATH, f)])[0]
-        end_vec = flatten_layers(end_model.get_nn_parameters())
-        score = mutual_info_regression(start_vec.reshape(-1, 1), end_vec)[0]
-        mi_scores.append(score)
+        vecs.append(flatten_layers(end_model.get_nn_parameters()))
         worker_ids.append(worker_id)
+    vecs = np.stack(vecs, axis=0)  # [N_clients, D]
 
-    sorted_mi = sorted(zip(mi_scores, worker_ids), key=lambda x: x[0], reverse=True)
+    # 2) 逐坐标中位数作为“基线”
+    xm = np.median(vecs, axis=0)   # [D]
+
+    # 3) 把每个向量与 xm 的分布差异用 JSD 衡量（数值稳）
+    def _hist_prob(x, bins=256):
+        lo, hi = np.percentile(x, 0.1), np.percentile(x, 99.9)
+        if not np.isfinite(lo) or not np.isfinite(hi) or lo == hi:
+            hi = lo + 1e-6
+        hist, _ = np.histogram(x, bins=bins, range=(lo, hi))
+        p = hist.astype(np.float64)
+        s = p.sum()
+        if s <= 0:
+            # 兜底：全零时回退为均匀分布
+            p[:] = 1.0
+            s = p.sum()
+        p /= s
+        return p
+
+    p_m = _hist_prob(xm)
+    scores = []
+    for v in vecs:
+        p_v = _hist_prob(v)
+        # JSD 越大=越“远/异常”
+        scores.append(jensenshannon(p_v, p_m))
+    scores = np.asarray(scores)
+
+    # 4) 排序与划分集合
+    order = np.argsort(-scores)  # 大->小
+    worker_ids = np.asarray(worker_ids)[order].tolist()
+
     fed_pct  = getattr(args, "fed_pct", 0.2)
     grey_pct = getattr(args, "grey_pct", 0.5)
+    fed_count  = max(1, int(len(worker_ids) * fed_pct))
+    grey_count = max(1, int(len(worker_ids) * grey_pct))
+    grey_count = min(grey_count, max(0, len(worker_ids) - fed_count))
+
+    grey_idx   = worker_ids[:grey_count]                          # 最可疑，进 VA 验证
+    fr_idx     = worker_ids[-fed_count:]                          # 最接近基线，作验证代理
+    benign_idx = worker_ids[grey_count:-fed_count] if len(worker_ids) > grey_count + fed_count else []
+    bad_idx    = []  # 交给后续 FR/投票环节再判恶
+
     logger.info(f"[MI@E{epoch}] fed_pct={fed_pct}, grey_pct={grey_pct}")
-    #下面三句是添加小样本兜底
-    fed_count  = max(1, int(len(sorted_mi) * fed_pct))
-    grey_count = max(1, int(len(sorted_mi) * grey_pct))
-    grey_count = min(grey_count, max(0, len(sorted_mi) - fed_count))
+    return benign_idx, bad_idx, grey_idx, fr_idx
 
-
-    fed_idx = [x[1] for x in sorted_mi[:fed_count]]
-    benign_idx = [x[1] for x in sorted_mi[:-grey_count]]
-    grey_idx = [x[1] for x in sorted_mi[-grey_count:]]
-    bad_idx = []
-
-    return benign_idx, bad_idx, grey_idx, fed_idx
 
 # ===== Part 8: 联邦保留验证方法 =====
 def verify_by_fr(clients, fr_idx, grey_idx):
