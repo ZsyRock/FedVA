@@ -13,7 +13,7 @@ logger.add(sys.stdout, level="INFO")
 REPLACEMENT_METHOD = replace_0_with_9
 
 # 自动查找下一个未被占用的实验编号
-def find_next_exp_idx(base=3500):
+def find_next_exp_idx(base=3450):
     while os.path.exists(f"logs/{base}.log") or os.path.exists(f"{base}_models"):
         base += 1
     return base
@@ -56,7 +56,7 @@ def run_model_poison_exp(replacement_method, num_poisoned_workers, kwargs, strat
 if __name__ == '__main__':
     START_EXP_IDX = find_next_exp_idx()
     NUM_EXP = 1
-    NUM_POISONED_WORKERS = 50
+    NUM_POISONED_WORKERS = 45
     # 这里不要再重复定义 REPLACEMENT_METHOD
     KWARGS = {
         "NUM_WORKERS_PER_ROUND": 50

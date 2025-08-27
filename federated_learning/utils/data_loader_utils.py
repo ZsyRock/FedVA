@@ -24,20 +24,37 @@ def generate_data_loaders_from_distributed_dataset(distributed_dataset, batch_si
         data_loaders.append(data_loader)
 
     return data_loaders
+def _resolve_data_dir(args, is_noniid: bool):
+    """
+    返回 data_loaders 子目录，如:
+      - noniid:  "<dataset>_noniid"  (默认) 或 args.data_loader_subdir
+      - iid:     "<dataset>"
+    若 args 没给 dataset，默认 "cifar10"
+    """
+    dataset = getattr(args, "dataset", "cifar10")
+    # 允许外部直接指定完整子目录名（最灵活）
+    override = getattr(args, "data_loader_subdir", None)
+    if override:
+        return override
+    return f"{dataset}_noniid" if is_noniid else dataset
 
 def load_train_data_loader(logger, args):
     strategy = args.get_data_distribution_strategy()
-
-    if strategy == 'noniid':
-        train_data_loader_path = "data_loaders/cifar10_noniid/train_data_loader.pickle"
-    else:
-        train_data_loader_path = "data_loaders/cifar10/train_data_loader.pickle"
+    subdir = _resolve_data_dir(args, is_noniid=(strategy == "noniid"))
+    train_data_loader_path = os.path.join("data_loaders", subdir, "train_data_loader.pickle")
 
     if os.path.exists(train_data_loader_path):
         return load_data_loader_from_file(logger, train_data_loader_path)
-    else:
-        logger.error(f"Couldn't find train data loader stored in file: {train_data_loader_path}")
-        raise FileNotFoundError(f"Couldn't find train data loader stored in file: {train_data_loader_path}")
+
+    # 向后兼容：如果找不到，就退回旧的硬编码路径（避免现有脚本立刻挂掉）
+    legacy = "data_loaders/cifar10_noniid/train_data_loader.pickle" if strategy == "noniid" \
+        else "data_loaders/cifar10/train_data_loader.pickle"
+    if os.path.exists(legacy):
+        logger.warning(f"[fallback] {train_data_loader_path} not found, using legacy path: {legacy}")
+        return load_data_loader_from_file(logger, legacy)
+
+    logger.error(f"Couldn't find train data loader file: {train_data_loader_path}")
+    raise FileNotFoundError(train_data_loader_path)
 
 def generate_train_loader(args, dataset):
     train_dataset = dataset.get_train_dataset()
@@ -46,21 +63,21 @@ def generate_train_loader(args, dataset):
     return dataset.get_data_loader_from_data(args.get_batch_size(), X, Y)
 
 def load_test_data_loader(logger, args):
-    """
-    Loads the test data DataLoader object from a file if available.
-    """
     strategy = args.get_data_distribution_strategy()
-
-    if strategy == 'noniid':
-        test_data_loader_path = "data_loaders/cifar10_noniid/test_data_loader.pickle"
-    else:
-        test_data_loader_path = "data_loaders/cifar10/test_data_loader.pickle"
+    subdir = _resolve_data_dir(args, is_noniid=(strategy == "noniid"))
+    test_data_loader_path = os.path.join("data_loaders", subdir, "test_data_loader.pickle")
 
     if os.path.exists(test_data_loader_path):
         return load_data_loader_from_file(logger, test_data_loader_path)
-    else:
-        logger.error(f"Couldn't find test data loader stored in file: {test_data_loader_path}")
-        raise FileNotFoundError(f"Couldn't find test data loader stored in file: {test_data_loader_path}")
+
+    legacy = "data_loaders/cifar10_noniid/test_data_loader.pickle" if strategy == "noniid" \
+        else "data_loaders/cifar10/test_data_loader.pickle"
+    if os.path.exists(legacy):
+        logger.warning(f"[fallback] {test_data_loader_path} not found, using legacy path: {legacy}")
+        return load_data_loader_from_file(logger, legacy)
+
+    logger.error(f"Couldn't find test data loader file: {test_data_loader_path}")
+    raise FileNotFoundError(test_data_loader_path)
 
 
 

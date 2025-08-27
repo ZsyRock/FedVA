@@ -14,7 +14,7 @@ logger.add(sys.stdout, level="INFO")
 REPLACEMENT_METHOD = replace_0_with_9  # data_poison=False 时不会用到
 
 # 自动查找下一个未被占用的实验编号（从 4000 开始）
-def find_next_exp_idx(base=4000):
+def find_next_exp_idx(base=4450):
     while os.path.exists(f"logs/{base}.log") or os.path.exists(f"{base}_models"):
         base += 1
     return base
@@ -33,7 +33,7 @@ def run_model_poison_exp(replacement_method, num_poisoned_workers, kwargs, strat
 
         # ===== 关键：启用“模型投毒（sign-flip）”，关闭数据投毒 =====
         args.model_poison = "sign"          # 触发 client.sign_attack(...)
-        args.sign_scale = 1               # 强度可做 0.5/1/2 消融
+        args.sign_scale = 0.5               # 强度可做 0.5/1/2 消融
         args.data_poison = False            # 只做模型投毒，避免与标签翻转混合
 
         # ===== 其它保持不变 =====
@@ -60,7 +60,7 @@ def run_model_poison_exp(replacement_method, num_poisoned_workers, kwargs, strat
 if __name__ == '__main__':
     START_EXP_IDX = find_next_exp_idx()     # 从 4000 起，自动递增
     NUM_EXP = 1
-    NUM_POISONED_WORKERS = 0               # 恶意客户端数量（可按需改）
+    NUM_POISONED_WORKERS = 45               # 恶意客户端数量（可按需改）
     KWARGS = { "NUM_WORKERS_PER_ROUND": 50 }
 
     for experiment_id in range(START_EXP_IDX, START_EXP_IDX + NUM_EXP):

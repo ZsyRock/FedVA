@@ -24,17 +24,13 @@ export LD_LIBRARY_PATH=$CONDA_PREFIX/lib:$LD_LIBRARY_PATH
 # ====== 依次运行多个实验 ======
 
 
-echo "==== 开始运行 mp40.py ===="
-python mp40.py
 
-echo "==== 开始运行 mp30.py ===="
-python mp30.py
 
-echo "==== 开始运行 mp20.py ===="
-python mp20.py
+echo "==== 开始运行 lf.py ===="
+python lf.py
 
-echo "==== 开始运行 mp10.py ===="
-python mp10.py
+
+
 
 
 echo "==== 所有实验运行完成 ===="
