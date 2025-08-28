@@ -26,10 +26,44 @@ export LD_LIBRARY_PATH=$CONDA_PREFIX/lib:$LD_LIBRARY_PATH
 
 
 
-echo "==== 开始运行 lf.py ===="
-python lf.py
+echo "==== fashion mnist noniid lf0 ===="
+python fmnist_non_lf.py
 
+echo "==== fashion mnist noniid lf10 ===="
+python fmnist_non_lf10.py
 
+echo "==== fashion mnist noniid lf20 ===="
+python fmnist_non_lf20.py
+
+echo "==== fashion mnist noniid lf30 ===="
+python fmnist_non_lf30.py
+
+echo "==== fashion mnist noniid lf40 ===="
+python fmnist_non_lf40.py
+
+echo "==== fashion mnist noniid mp0 ===="
+python fmnist_non_mp.py
+
+echo "==== fashion mnist noniid mp10 ===="
+python fmnist_non_mp10.py
+
+echo "==== fashion mnist noniid mp20 ===="
+python fmnist_non_mp20.py
+
+echo "==== fashion mnist noniid mp30 ===="
+python fmnist_non_mp30.py
+
+echo "==== fashion mnist noniid mp40 ===="
+python fmnist_non_mp40.py
+
+echo "==== cifar10 iid mp0 ===="
+python cifar10_iid_mp0.py
+
+echo "==== cifar10 iid mp40 ===="
+python cifar10_iid_mp40.py
+
+echo "==== cifar10 noniid lf20 ===="
+python cifar10_non_lf20.py
 
 
 
